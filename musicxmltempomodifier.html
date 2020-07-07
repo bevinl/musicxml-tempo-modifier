@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Musicxml tempo modifier</title>
+        <meta name="description" content="Musicxml tempo modifier" />
+        <meta name="keywords" content="musicxml score tempo modify" />
+        <meta name="author" content="bevlison">
+        <meta name="robots" content="index, follow" />
+        <meta name="revisit-after" content="1 week" />
+        <meta http-equiv="cache-control" content="no-cache">
+        <meta name="language" content="EN">
+        <meta http-equiv="expires" content="0">
+        <meta http-equiv="pragma" content="no-cache">
+        <meta http-equiv="X-UA-Compatible" content="IE=8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1,shrink-to-fit=yes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <base href="/">
+        <meta name="theme-color" content="#BCD531">
+
+        
+        <style>
+            body {
+                background-color: linen;
+            }
+            
+            h1 {
+                color: maroon;
+                margin-left: 40px;
+            }
+            #drop_zone {
+                border: 5px solid blue;
+                width : 100%;
+                height: 100px;
+                text-align: center;
+                font-size:150%;
+            }
+            .result, .title {
+                margin-top:30px;
+                font-size:120%;
+                color : green;
+            }
+
+            .result {
+                font-size:150%;
+            }
+
+            .wrapper {
+                margin: 0 auto;
+                width:80%;
+            }
+           
+            .about {
+                border: 1px solid yellow;
+                background-color: darkgreen;
+                color : yellow;
+                width : 100%;
+                height: 50px;
+                text-align: center;
+            }
+
+        </style>
+
+    </head>
+<body>
+
+    <div class="wrapper">
+        <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+            <p>Drag the UNCOMPRESSED musicxml file</p>
+        </div>
+
+        <div class="title">Tempo multiplier</div>
+        <div>The function of the script on this webpage is multiplying all tempo indicators in the score with given factor</div>
+        <div>To half the tempo, the multiplier is 0.5</div>
+        <div><input id="factor" value="0.5" /></div>
+
+        <div class="title">New filename</div>
+        <div>The result score will be available as download. You may want to rename the uploaded filename</div>
+        <div>The text [original] will be replaced by the original filename, other text will be taken literal</div>
+        <div><input id="rename" value="[original]-slow" /></div>
+
+        <div class="title">Result</div>
+        <div>After you've dropped the source file, result will be shown here. If successfully processed the download should be done automatically, otherwise you'll be informed about the error</div>
+        <div id="result" class="result"></div>
+
+        <div class="about">
+            This script was created by bevlison. I've used this tool for a lot of scores, <br /><a href="https://www.youtube.com/channel/UCvbIz6zbLE4pAE1-5Ui8Big/" style="color:yellow; font-size:120%">You can visit my YouTube channel</a>
+        </div>
+    </div>
+
+
+    <script>
+    
+    function dropHandler(ev) {
+
+        console.log('File dropped');
+        
+        // Prevent default behavior (Prevent file from being opened)
+        ev.preventDefault();
+
+        if (ev.dataTransfer.items) {
+            // If dropped items aren't files, reject them
+            if (ev.dataTransfer.items[0].kind === 'file') {
+
+                var file = ev.dataTransfer.items[0].getAsFile();
+                changetempo(file);
+                      
+            }
+        } else {
+
+            var file = ev.dataTransfer.files[0].getAsFile();
+            changetempo(file);
+              
+        }
+
+    }
+
+    function dragOverHandler(ev) {
+
+        console.log('File in drop zone'); 
+
+        // Prevent default behavior (Prevent file from being opened)
+        ev.preventDefault();
+
+    }
+
+    function changetempo(file) {
+
+        console.log('Evaluating file ' + file.name + ', extension is :' + file.name.split(".")[file.name.split(".").length-1]);
+        if (file.name.split(".")[file.name.split(".").length-1] == 'musicxml') {
+               
+            readCompleted = function(result) {
+                console.log('content of file is : ' + result);
+            }
+            var reader = new FileReader();
+            reader.addEventListener("loadend", function() {
+                
+                var data = reader.result;
+                var factor = parseFloat(document.getElementById("factor").value);
+                if (factor == NaN || factor <= 0) {
+
+                    showError('ERROR : Invalid factor ' + factor);
+
+                } else {
+                
+
+                    var isXML = '<?xml version="1.0" encoding="UTF-8"?>';
+                    if (data.substring(0, isXML.length) == isXML) {
+
+                        var replaces = {};
+
+                        var reg = /sound tempo="(\d*)"/g;
+                        var result;
+                        while((result = reg.exec(data)) !== null) {
+                            if (result[0].length > 0) {           
+                            replaces[result[1]] = 'sound tempo="' + parseInt(parseInt(result[1]) * factor) + '"';
+                            }        
+                        }
+                        
+                        for(var propt in replaces){
+                            var findstr = 'sound tempo="' + propt + '"';
+                            while (data.indexOf(findstr) > 0) {
+                                console.log('replacing ' + findstr + ' by ' +  replaces[propt]);
+                                data = data.replace(findstr, replaces[propt]);
+                            }           
+                        }
+
+                        replaces = {};
+
+                        var reg = /<per-minute>(\d*)<\/per-minute>/g;
+                        var result;
+                        while((result = reg.exec(data)) !== null) {
+                            if (result[0].length > 0) {           
+                            replaces[result[1]] = '<per-minute>' + parseInt(parseInt(result[1]) * factor) + '<\/per-minute>';
+                            }        
+                        }
+                        
+                        for(var propt in replaces){
+                            var findstr = '<per-minute>' + propt + '<\/per-minute>';
+                            while (data.indexOf(findstr) > 0) {
+                                console.log('replacing ' + findstr + ' by ' +  replaces[propt]);
+                                data = data.replace(findstr, replaces[propt]);
+                            }           
+                        }
+
+                        var newFilename = document.getElementById("rename").value.replace('[original]', file.name.replace('.musicxml',''));
+                        if (newFilename.length == 0) newFilename = file.name;
+                        newFilename += '.musicxml';
+                         
+                        downloadResult(newFilename, data);                    
+
+                    } else {
+                        showError('content of file is not valid uncompressed xml : ' + reader.result);
+                    }
+                }
+               
+            });      
+            reader.readAsText(file);
+
+        } else {
+            showError('File has wrong format ' + file.name);
+        }   
+
+    }    
+    
+    function downloadResult(filename, text) {
+
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.getElementById('result').appendChild(element);
+
+        element.click();
+
+        //document.body.removeChild(element);
+
+        document.getElementById('result').innerHTML = 'The tempo was changed, the result file is named : ' + filename + ' and is downloaded to your device download folder';
+
+    }
+
+    function showError(errMsg) {
+        document.getElementById('result').innerHTML = 'Something went wrong : ' + errMsg;
+        document.getElementById('result').style.color = 'red';
+        console.log(errMsg);        
+    }
+
+    </script>
+
+</body>
+</html>
