@@ -1,5 +1,5 @@
 # musicxml-tempo-modifier
-HTML page containing javascript that handles proportional modification of the global tempo of a score file in uncompressed musicxml format. 
+HTML page containing javascript that handles proportional modification of the global tempo of a score in a file with uncompressed musicxml format. 
 
 Can be used on localhost, no webserver needed. Just git clone and load the html file in your browser!
 
