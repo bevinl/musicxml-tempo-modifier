@@ -70,9 +70,9 @@
         </div>
 
         <div class="title">Tempo multiplier</div>
-        <div>The function of the script on this webpage is multiplying all tempo indicators in the score with given factor</div>
+        <div>The function of the script on this webpage is multiplying all tempo indicators in the score with given multiplier</div>
         <div>To halve the tempo, the multiplier is 0.5</div>
-        <div><input id="factor" value="0.5" /></div>
+        <div><input id="multiplier" value="0.5" /></div>
 
         <div class="title">New filename</div>
         <div>The result score will be available as download. You may want to rename the uploaded filename</div>
@@ -139,17 +139,17 @@
             reader.addEventListener("loadend", function() {
                 
                 var data = reader.result;
-                var factor = parseFloat(document.getElementById("factor").value);
-                if (factor == NaN || factor <= 0) {
+                var multiplier = parseFloat(document.getElementById("multiplier").value);
+                if (multiplier == NaN || multiplier <= 0) {
 
-                    showError('ERROR : Invalid factor ' + factor);
+                    showError('ERROR : Invalid multiplier ' + multiplier);
 
                 } else {
                 
 
                     var isXML = '<?xml version="1.0" encoding="UTF-8"?>';
                     if (data.substring(0, isXML.length) == isXML) {
-                        
+
                         var patterns = [{
                             pattern: /sound tempo="(\d*)"/g,
                             prefix : 'sound tempo="',
@@ -166,7 +166,7 @@
                             var result;
                             while((result = item.pattern.exec(data)) !== null) {
                                 if (result[0].length > 0) {           
-                                    modifications[result[1]] = item.prefix + parseInt(parseInt(result[1]) * factor) + item.postfix;
+                                    modifications[result[1]] = item.prefix + parseInt(parseInt(result[1]) * multiplier) + item.postfix;
                                 }        
                             }
 
