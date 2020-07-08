@@ -55,7 +55,7 @@
                 background-color: darkgreen;
                 color : yellow;
                 width : 100%;
-                height: 50px;
+                padding: 10px;
                 text-align: center;
             }
 
@@ -71,7 +71,7 @@
 
         <div class="title">Tempo multiplier</div>
         <div>The function of the script on this webpage is multiplying all tempo indicators in the score with given factor</div>
-        <div>To half the tempo, the multiplier is 0.5</div>
+        <div>To halve the tempo, the multiplier is 0.5</div>
         <div><input id="factor" value="0.5" /></div>
 
         <div class="title">New filename</div>
@@ -84,7 +84,10 @@
         <div id="result" class="result"></div>
 
         <div class="about">
-            This script was created by bevlison. I've used this tool for a lot of scores, <br /><a href="https://www.youtube.com/channel/UCvbIz6zbLE4pAE1-5Ui8Big/" style="color:yellow; font-size:120%">You can visit my YouTube channel</a>
+            
+            I've used this tool for a lot of score practicing goals, <br />
+            <a href="https://www.youtube.com/channel/UCvbIz6zbLE4pAE1-5Ui8Big/" style="color:yellow; font-size:120%">You can visit my YouTube channel to check what I mean</a>
+
         </div>
     </div>
 
@@ -103,13 +106,13 @@
             if (ev.dataTransfer.items[0].kind === 'file') {
 
                 var file = ev.dataTransfer.items[0].getAsFile();
-                changetempo(file);
+                modifytempo(file);
                       
             }
         } else {
 
             var file = ev.dataTransfer.files[0].getAsFile();
-            changetempo(file);
+            modifytempo(file);
               
         }
 
@@ -124,7 +127,7 @@
 
     }
 
-    function changetempo(file) {
+    function modifytempo(file) {
 
         console.log('Evaluating file ' + file.name + ', extension is :' + file.name.split(".")[file.name.split(".").length-1]);
         if (file.name.split(".")[file.name.split(".").length-1] == 'musicxml') {
@@ -148,40 +151,35 @@
                     if (data.substring(0, isXML.length) == isXML) {
 
                         var replaces = {};
+                        var patterns = [{
+                            pattern: /sound tempo="(\d*)"/g,
+                            prefix : 'sound tempo="',
+                            postfix : '"'
+                         },{
+                            pattern: /<per-minute>(\d*)<\/per-minute>/g,
+                            prefix : '<per-minute>',
+                            postfix : '<\/per-minute>'
+                        }];
+                      
+                        modifications = {};
+                        patterns.forEach(item =>{
 
-                        var reg = /sound tempo="(\d*)"/g;
-                        var result;
-                        while((result = reg.exec(data)) !== null) {
-                            if (result[0].length > 0) {           
-                            replaces[result[1]] = 'sound tempo="' + parseInt(parseInt(result[1]) * factor) + '"';
-                            }        
-                        }
-                        
-                        for(var propt in replaces){
-                            var findstr = 'sound tempo="' + propt + '"';
-                            while (data.indexOf(findstr) > 0) {
-                                console.log('replacing ' + findstr + ' by ' +  replaces[propt]);
-                                data = data.replace(findstr, replaces[propt]);
-                            }           
-                        }
+                            var result;
+                            while((result = item.pattern.exec(data)) !== null) {
+                                if (result[0].length > 0) {           
+                                    modifications[result[1]] = item.prefix + parseInt(parseInt(result[1]) * factor) + item.postfix;
+                                }        
+                            }
 
-                        replaces = {};
+                            for(var modification in modifications){
+                                var findstr = item.prefix + modification + item.postfix;
+                                while (data.indexOf(findstr) > 0) {
+                                    console.log('modifying ' + findstr + ' by ' +  modifications[modification]);
+                                    data = data.replace(findstr, modifications[modification]);
+                                }           
+                            }
 
-                        var reg = /<per-minute>(\d*)<\/per-minute>/g;
-                        var result;
-                        while((result = reg.exec(data)) !== null) {
-                            if (result[0].length > 0) {           
-                            replaces[result[1]] = '<per-minute>' + parseInt(parseInt(result[1]) * factor) + '<\/per-minute>';
-                            }        
-                        }
-                        
-                        for(var propt in replaces){
-                            var findstr = '<per-minute>' + propt + '<\/per-minute>';
-                            while (data.indexOf(findstr) > 0) {
-                                console.log('replacing ' + findstr + ' by ' +  replaces[propt]);
-                                data = data.replace(findstr, replaces[propt]);
-                            }           
-                        }
+                        });
 
                         var newFilename = document.getElementById("rename").value.replace('[original]', file.name.replace('.musicxml',''));
                         if (newFilename.length == 0) newFilename = file.name;
@@ -216,7 +214,7 @@
 
         //document.body.removeChild(element);
 
-        document.getElementById('result').innerHTML = 'The tempo was changed, the result file is named : ' + filename + ' and is downloaded to your device download folder';
+        document.getElementById('result').innerHTML = 'The tempo was modified, the result file is named : ' + filename + ' and is downloaded to your device download folder';
 
     }
 
